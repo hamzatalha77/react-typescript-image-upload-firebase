@@ -1,6 +1,12 @@
 import React, { useState } from 'react'
 import { storage } from './config/firebase'
-import { ref } from 'firebase/storage'
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  UploadTaskSnapshot,
+} from 'firebase/storage'
+
 const UploadForm: React.FC = () => {
   const [name, setName] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -16,15 +22,15 @@ const UploadForm: React.FC = () => {
     }
   }
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (file) {
-      const storageRef = storage.ref()
-      const fileRef = storageRef.child(file.name)
-      const uploadTask = fileRef.put(file)
+      const storageRef = getStorage()
+      const fileRef = ref(storageRef, file.name)
+      const uploadTask = uploadBytesResumable(fileRef, file)
 
       uploadTask.on(
         'state_changed',
-        (snapshot) => {
+        (snapshot: UploadTaskSnapshot) => {
           const uploadProgress =
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100
           setProgress(uploadProgress)
@@ -36,6 +42,8 @@ const UploadForm: React.FC = () => {
           console.log('File uploaded successfully.')
         }
       )
+
+      await uploadTask
     }
   }
 
