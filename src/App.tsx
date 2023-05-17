@@ -7,7 +7,7 @@ import {
   list,
 } from 'firebase/storage'
 import { storage } from './config/firebase'
-import { v4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid'
 
 function App() {
   const [imageUpload, setImageUpload] = useState(null)
