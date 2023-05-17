@@ -1,22 +1,18 @@
-import { useState, useEffect } from 'react'
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  listAll,
-  list,
-} from 'firebase/storage'
+import { useState, useEffect, ChangeEvent } from 'react'
+import { ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage'
 import { storage } from './config/firebase'
 import { v4 as uuidv4 } from 'uuid'
 
-function App() {
-  const [imageUpload, setImageUpload] = useState(null)
-  const [imageUrls, setImageUrls] = useState([])
+function App(): JSX.Element {
+  const [imageUpload, setImageUpload] = useState<File | null>(null)
+  const [imageUrls, setImageUrls] = useState<string[]>([])
 
   const imagesListRef = ref(storage, 'images/')
-  const uploadFile = () => {
-    if (imageUpload == null) return
-    const imageRef = ref(storage, `images/${imageUpload.name + v4()}`)
+
+  const uploadFile = (): void => {
+    if (imageUpload === null) return
+    const imageName = imageUpload.name + uuidv4()
+    const imageRef = ref(storage, `images/${imageName}`)
     uploadBytes(imageRef, imageUpload).then((snapshot) => {
       getDownloadURL(snapshot.ref).then((url) => {
         setImageUrls((prev) => [...prev, url])
@@ -25,27 +21,31 @@ function App() {
   }
 
   useEffect(() => {
-    listAll(imagesListRef).then((response) => {
-      response.items.forEach((item) => {
-        getDownloadURL(item).then((url) => {
-          setImageUrls((prev) => [...prev, url])
-        })
+    listAll(imagesListRef)
+      .then((response) =>
+        Promise.all(response.items.map((item) => getDownloadURL(item)))
+      )
+      .then((urls) => {
+        setImageUrls(urls)
       })
-    })
+      .catch((error) => {
+        console.error('Error fetching images:', error)
+      })
   }, [])
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    if (event.target.files && event.target.files[0]) {
+      setImageUpload(event.target.files[0])
+    }
+  }
 
   return (
     <div className="App">
-      <input
-        type="file"
-        onChange={(event) => {
-          setImageUpload(event.target.files[0])
-        }}
-      />
-      <button onClick={uploadFile}> Upload Image</button>
-      {imageUrls.map((url) => {
-        return <img src={url} />
-      })}
+      <input type="file" onChange={handleFileChange} />
+      <button onClick={uploadFile}>Upload Image</button>
+      {imageUrls.map((url) => (
+        <img key={url} src={url} alt="Uploaded" />
+      ))}
     </div>
   )
 }
