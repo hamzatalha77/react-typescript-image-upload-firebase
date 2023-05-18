@@ -15,6 +15,7 @@ interface DataItem {
   id: string
   name: string
   imageUrl: string
+  github: string
   // Other properties...
 }
 
@@ -47,6 +48,7 @@ const ThePage = () => {
             const dataItem: DataItem = {
               id: doc.id,
               name: doc.data().name,
+              github: doc.data().github,
               imageUrl: imageUrls[index],
             }
             dataItems.push(dataItem)
@@ -67,6 +69,8 @@ const ThePage = () => {
       {data.map((item) => (
         <div key={item.id}>
           <h2>{item.name}</h2>
+          <h2>{item.github}</h2>
+
           <img src={item.imageUrl} alt="Portfolio Image" />
         </div>
       ))}
