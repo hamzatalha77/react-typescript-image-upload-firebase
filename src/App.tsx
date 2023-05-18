@@ -13,19 +13,21 @@ import { v4 as uuidv4 } from 'uuid'
 function App(): JSX.Element {
   const [imageUpload, setImageUpload] = useState<File | null>(null)
   const [imageUrls, setImageUrls] = useState<string[]>([])
-  const [imageName, setImageName] = useState<string>('')
-  const [additionalData, setAdditionalData] = useState<string>('')
+  const [name, setName] = useState<string>('')
+  const [github, setGithub] = useState<string>('')
+  const [live, setLive] = useState<string>('')
 
   const imagesListRef = storageRef(storage, 'images/')
 
   const uploadFile = (): void => {
     if (
       imageUpload === null ||
-      imageName.trim() === '' ||
-      additionalData.trim() === ''
+      name.trim() === '' ||
+      github.trim() === '' ||
+      live.trim() === ''
     )
       return
-    const newImageName = imageName + uuidv4()
+    const newImageName = name + uuidv4()
     const imageRef = storageRef(storage, `images/${newImageName}`)
 
     uploadBytes(imageRef, imageUpload)
@@ -35,13 +37,14 @@ function App(): JSX.Element {
         })
 
         const imageData = {
-          name: imageName,
-          additionalData: additionalData,
+          name: name,
+          github: github,
+          live: live,
           url: snapshot.ref.fullPath,
         }
 
         const db = getFirestore()
-        const imagesCollection = collection(db, 'imagesData')
+        const imagesCollection = collection(db, 'portfolios')
 
         // Store additional data in Firestore
         addDoc(imagesCollection, imageData)
@@ -77,13 +80,14 @@ function App(): JSX.Element {
   }
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setImageName(event.target.value)
+    setName(event.target.value)
   }
 
-  const handleAdditionalDataChange = (
-    event: ChangeEvent<HTMLInputElement>
-  ): void => {
-    setAdditionalData(event.target.value)
+  const handleGithubChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setGithub(event.target.value)
+  }
+  const handleLiveChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setLive(event.target.value)
   }
 
   return (
@@ -92,14 +96,20 @@ function App(): JSX.Element {
       <input
         type="text"
         placeholder="Enter name"
-        value={imageName}
+        value={name}
         onChange={handleNameChange}
       />
       <input
         type="text"
         placeholder="Enter additional data"
-        value={additionalData}
-        onChange={handleAdditionalDataChange}
+        value={github}
+        onChange={handleGithubChange}
+      />
+      <input
+        type="text"
+        placeholder="Enter additional data"
+        value={live}
+        onChange={handleLiveChange}
       />
       <button onClick={uploadFile}>Upload Image</button>
       {imageUrls.map((url) => (
