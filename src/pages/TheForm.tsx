@@ -6,7 +6,7 @@ import {
   listAll,
 } from 'firebase/storage'
 import { getFirestore, collection, addDoc } from 'firebase/firestore'
-
+import { useNavigate } from 'react-router-dom'
 import { storage } from '../config/firebase'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -16,7 +16,7 @@ function TheForm(): JSX.Element {
   const [name, setName] = useState<string>('')
   const [github, setGithub] = useState<string>('')
   const [live, setLive] = useState<string>('')
-
+  const navigate = useNavigate()
   const imagesListRef = storageRef(storage, 'images/')
 
   const uploadFile = (): void => {
@@ -50,7 +50,9 @@ function TheForm(): JSX.Element {
         addDoc(imagesCollection, imageData)
           .then(() => {
             console.log('Image data stored successfully')
+            navigate('/thepage')
           })
+
           .catch((error) => {
             console.error('Error storing image data:', error)
           })
@@ -59,7 +61,6 @@ function TheForm(): JSX.Element {
         console.error('Error uploading image:', error)
       })
   }
-
   useEffect(() => {
     listAll(imagesListRef)
       .then((response) =>
@@ -115,7 +116,6 @@ function TheForm(): JSX.Element {
       {imageUrls.map((url) => (
         <img key={url} src={url} alt="Uploaded" />
       ))}
-      {imageUrls}
     </div>
   )
 }
