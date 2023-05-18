@@ -40,7 +40,7 @@ function App(): JSX.Element {
           name: name,
           github: github,
           live: live,
-          url: snapshot.ref.fullPath,
+          image_url: snapshot.ref.fullPath,
         }
 
         const db = getFirestore()
