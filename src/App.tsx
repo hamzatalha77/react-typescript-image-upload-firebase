@@ -95,19 +95,19 @@ function App(): JSX.Element {
       <input type="file" onChange={handleFileChange} />
       <input
         type="text"
-        placeholder="Enter name"
+        placeholder="Enter project name"
         value={name}
         onChange={handleNameChange}
       />
       <input
         type="text"
-        placeholder="Enter additional data"
+        placeholder="Enter github link"
         value={github}
         onChange={handleGithubChange}
       />
       <input
         type="text"
-        placeholder="Enter additional data"
+        placeholder="Enter live url"
         value={live}
         onChange={handleLiveChange}
       />
