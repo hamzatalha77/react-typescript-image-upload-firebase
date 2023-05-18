@@ -6,13 +6,15 @@ import {
   QuerySnapshot,
   DocumentData,
   getDocs,
+  QueryDocumentSnapshot,
 } from 'firebase/firestore'
-import { ref, getDownloadURL } from 'firebase/storage'
+import { ref, listAll, getDownloadURL } from 'firebase/storage'
 import { storage } from '../config/firebase'
 
 interface DataItem {
   id: string
   name: string
+  imageUrl: string
   // Other properties...
 }
 
@@ -28,13 +30,28 @@ const ThePage = () => {
         const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q)
 
         const dataItems: DataItem[] = []
-        querySnapshot.forEach((doc) => {
-          const dataItem: DataItem = {
-            id: doc.id,
-            name: doc.data().name,
-          }
-          dataItems.push(dataItem)
+
+        // Fetch images from Firebase Storage
+        const imagesList = await listAll(ref(storage, '/images'))
+
+        // Get download URLs for each image
+        const imagePromises = imagesList.items.map(async (imageRef) => {
+          const imageUrl = await getDownloadURL(imageRef)
+          return imageUrl
         })
+
+        const imageUrls = await Promise.all(imagePromises)
+
+        querySnapshot.docs.forEach(
+          (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
+            const dataItem: DataItem = {
+              id: doc.id,
+              name: doc.data().name,
+              imageUrl: imageUrls[index],
+            }
+            dataItems.push(dataItem)
+          }
+        )
 
         setData(dataItems)
       } catch (error) {
@@ -48,7 +65,10 @@ const ThePage = () => {
   return (
     <div>
       {data.map((item) => (
-        <div key={item.id}>{item.name}</div>
+        <div key={item.id}>
+          <h2>{item.name}</h2>
+          <img src={item.imageUrl} alt="Portfolio Image" />
+        </div>
       ))}
     </div>
   )
