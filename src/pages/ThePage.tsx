@@ -10,14 +10,8 @@ import {
 } from 'firebase/firestore'
 import { ref, listAll, getDownloadURL } from 'firebase/storage'
 import { storage } from '../config/firebase'
-
-interface DataItem {
-  id: string
-  name: string
-  imageUrl: string
-  github: string
-  // Other properties...
-}
+import { DataItem } from '../interface/DataItemInterface'
+import Mytest from '../components/Mytest'
 
 const ThePage = () => {
   const [data, setData] = useState<DataItem[]>([])
@@ -49,6 +43,7 @@ const ThePage = () => {
               id: doc.id,
               name: doc.data().name,
               github: doc.data().github,
+              live: doc.data().live,
               imageUrl: imageUrls[index],
             }
             dataItems.push(dataItem)
@@ -67,12 +62,7 @@ const ThePage = () => {
   return (
     <div>
       {data.map((item) => (
-        <div key={item.id}>
-          <h2>{item.name}</h2>
-          <h2>{item.github}</h2>
-
-          <img src={item.imageUrl} alt="Portfolio Image" />
-        </div>
+        <Mytest key={item.id} item={item} /> // Pass 'item' prop to Mytest component
       ))}
     </div>
   )
