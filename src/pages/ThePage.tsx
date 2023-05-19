@@ -6,9 +6,11 @@ import {
   QuerySnapshot,
   DocumentData,
   getDocs,
+  deleteDoc,
+  doc,
   QueryDocumentSnapshot,
 } from 'firebase/firestore'
-import { ref, listAll, getDownloadURL } from 'firebase/storage'
+import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '../config/firebase'
 import { DataItem } from '../interface/DataItemInterface'
 import Mytest from '../components/Mytest'
@@ -45,6 +47,7 @@ const ThePage = () => {
               github: doc.data().github,
               live: doc.data().live,
               imageUrl: imageUrls[index],
+              onDelete: () => deleteDataItem(doc.id),
             }
             dataItems.push(dataItem)
           }
@@ -58,6 +61,15 @@ const ThePage = () => {
 
     fetchData()
   }, [])
+  const deleteDataItem = async (itemId: string) => {
+    try {
+      const db = getFirestore()
+      const itemDoc = doc(db, 'portfolios', itemId)
+
+      await deleteDoc(itemDoc)
+      setData((prevData) => prevData.filter((item) => item.id !== itemId))
+    } catch (error) {}
+  }
 
   return (
     <div>
