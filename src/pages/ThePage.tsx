@@ -11,7 +11,7 @@ import {
   getDoc,
   QueryDocumentSnapshot, // Update the import statement for QueryDocumentSnapshot
 } from 'firebase/firestore'
-import { ref, listAll, getDownloadURL } from 'firebase/storage'
+import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '../config/firebase'
 import { DataItem } from '../interface/DataItemInterface'
 import Mytest from '../components/Mytest'
@@ -75,9 +75,19 @@ const ThePage = () => {
         return
       }
 
+      const data = docSnapshot.data()
+      const imageUrl = data?.imageUrl
+
       // Delete the Firestore document
       await deleteDoc(itemDoc)
       setData((prevData) => prevData.filter((item) => item.id !== itemId))
+
+      // Delete the image from Firebase Storage
+      if (imageUrl) {
+        const imageRef = ref(storage, imageUrl)
+        await deleteObject(imageRef)
+        console.log('Image has been deleted successfully')
+      }
 
       console.log('Item has been deleted successfully')
     } catch (error) {
