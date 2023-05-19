@@ -9,7 +9,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  updateDoc, // Add this import
+  updateDoc,
   QueryDocumentSnapshot,
   deleteField,
 } from 'firebase/firestore'
@@ -50,7 +50,7 @@ const ThePage = () => {
               github: doc.data().github,
               live: doc.data().live,
               imageUrl: imageUrls[index],
-              onDelete: () => deleteDataItem(doc.id),
+              onDelete: () => deleteDataItem(doc.id, doc.data().imageUrl), // Pass the image URL to deleteDataItem
             }
             dataItems.push(dataItem)
           }
@@ -65,7 +65,7 @@ const ThePage = () => {
     fetchData()
   }, [])
 
-  const deleteDataItem = async (itemId: string) => {
+  const deleteDataItem = async (itemId: string, imageUrl: string) => {
     try {
       const db = getFirestore()
       const itemDoc = doc(db, 'portfolios', itemId)
@@ -77,12 +77,6 @@ const ThePage = () => {
         return
       }
 
-      const imageUrl = docSnapshot.data()?.imageUrl
-
-      // Delete the Firestore document
-      await deleteDoc(itemDoc)
-      setData((prevData) => prevData.filter((item) => item.id !== itemId))
-
       // Delete the image from Firebase Storage
       if (imageUrl) {
         const imageRef = ref(storage, imageUrl)
@@ -90,16 +84,16 @@ const ThePage = () => {
         console.log('Image has been deleted successfully')
       }
 
-      // Remove the image URL from the Firestore document
-      await updateDoc(itemDoc, {
-        imageUrl: deleteField(),
-      })
+      // Delete the Firestore document
+      await deleteDoc(itemDoc)
+      setData((prevData) => prevData.filter((item) => item.id !== itemId))
 
       console.log('Item has been deleted successfully')
     } catch (error) {
       console.error('Error deleting item:', error)
     }
   }
+
   return (
     <div>
       {data.map((item) => (
