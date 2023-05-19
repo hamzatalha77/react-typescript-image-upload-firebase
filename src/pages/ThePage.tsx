@@ -11,6 +11,7 @@ import {
   getDoc,
   updateDoc, // Add this import
   QueryDocumentSnapshot,
+  deleteField,
 } from 'firebase/firestore'
 import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '../config/firebase'
@@ -89,14 +90,16 @@ const ThePage = () => {
         console.log('Image has been deleted successfully')
       }
 
-      // Update the Firestore document to remove the image URL
-      await updateDoc(itemDoc, { imageUrl: null })
+      // Remove the image URL from the Firestore document
+      await updateDoc(itemDoc, {
+        imageUrl: deleteField(),
+      })
+
       console.log('Item has been deleted successfully')
     } catch (error) {
       console.error('Error deleting item:', error)
     }
   }
-
   return (
     <div>
       {data.map((item) => (
