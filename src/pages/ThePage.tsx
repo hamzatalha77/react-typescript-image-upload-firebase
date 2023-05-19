@@ -9,6 +9,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  updateDoc, // Add this import
   QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
@@ -62,13 +63,19 @@ const ThePage = () => {
 
     fetchData()
   }, [])
+
   const deleteDataItem = async (itemId: string) => {
     try {
       const db = getFirestore()
       const itemDoc = doc(db, 'portfolios', itemId)
 
-      // Get the image URL from the Firestore document
+      // Check if the document exists before deleting
       const docSnapshot = await getDoc(itemDoc)
+      if (!docSnapshot.exists()) {
+        console.log('Document does not exist')
+        return
+      }
+
       const imageUrl = docSnapshot.data()?.imageUrl
 
       // Delete the Firestore document
@@ -82,6 +89,8 @@ const ThePage = () => {
         console.log('Image has been deleted successfully')
       }
 
+      // Update the Firestore document to remove the image URL
+      await updateDoc(itemDoc, { imageUrl: null })
       console.log('Item has been deleted successfully')
     } catch (error) {
       console.error('Error deleting item:', error)
