@@ -19,48 +19,41 @@ function TheForm(): JSX.Element {
   const navigate = useNavigate()
   const imagesListRef = storageRef(storage, 'images/')
 
-  const uploadFile = (): void => {
+  const uploadFile = async (): Promise<void> => {
     if (
       imageUpload === null ||
       name.trim() === '' ||
       github.trim() === '' ||
       live.trim() === ''
-    )
+    ) {
       return
+    }
+
     const newImageName = name + uuidv4()
     const imageRef = storageRef(storage, `images/${newImageName}`)
 
-    uploadBytes(imageRef, imageUpload)
-      .then((snapshot) => {
-        getDownloadURL(snapshot.ref).then((url) => {
-          setImageUrls((prev) => [...prev, url])
-        })
+    try {
+      const snapshot = await uploadBytes(imageRef, imageUpload)
+      const imageUrl = await getDownloadURL(snapshot.ref)
 
-        const imageData = {
-          name: name,
-          github: github,
-          live: live,
-          image_url: snapshot.ref.fullPath,
-        }
+      const imageData = {
+        name: name,
+        github: github,
+        live: live,
+        imageUrl: snapshot.ref.fullPath,
+      }
 
-        const db = getFirestore()
-        const imagesCollection = collection(db, 'portfolios')
+      const db = getFirestore()
+      const imagesCollection = collection(db, 'portfolios')
 
-        // Store additional data in Firestore
-        addDoc(imagesCollection, imageData)
-          .then(() => {
-            console.log('Image data stored successfully')
-            navigate('/thepage')
-          })
-
-          .catch((error) => {
-            console.error('Error storing image data:', error)
-          })
-      })
-      .catch((error) => {
-        console.error('Error uploading image:', error)
-      })
+      await addDoc(imagesCollection, imageData)
+      console.log('Image data stored successfully')
+      navigate('/thepage')
+    } catch (error) {
+      console.error('Error uploading image:', error)
+    }
   }
+
   useEffect(() => {
     listAll(imagesListRef)
       .then((response) =>
