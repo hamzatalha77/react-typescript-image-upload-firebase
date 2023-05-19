@@ -8,6 +8,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  getDoc,
   QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
@@ -66,13 +67,24 @@ const ThePage = () => {
       const db = getFirestore()
       const itemDoc = doc(db, 'portfolios', itemId)
 
+      // Get the image URL from the Firestore document
+      const docSnapshot = await getDoc(itemDoc)
+      const imageUrl = docSnapshot.data()?.imageUrl
+
+      // Delete the Firestore document
       await deleteDoc(itemDoc)
       setData((prevData) => prevData.filter((item) => item.id !== itemId))
-      const imageRef = ref(storage, `/images/${itemId}.jpg`)
-      await deleteObject(imageRef)
-      console.log('item has been deleted')
+
+      // Delete the image from Firebase Storage
+      if (imageUrl) {
+        const imageRef = ref(storage, imageUrl)
+        await deleteObject(imageRef)
+        console.log('Image has been deleted successfully')
+      }
+
+      console.log('Item has been deleted successfully')
     } catch (error) {
-      console.error('Error deleting item', error)
+      console.error('Error deleting item:', error)
     }
   }
 

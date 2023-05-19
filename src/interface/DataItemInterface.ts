@@ -4,6 +4,7 @@ export interface DataItem {
   imageUrl: string
   github: string
   live: string
+  onDelete: () => void
 }
 
 // ThePage component remains the same
