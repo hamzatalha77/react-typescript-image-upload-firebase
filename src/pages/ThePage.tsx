@@ -68,7 +68,12 @@ const ThePage = () => {
 
       await deleteDoc(itemDoc)
       setData((prevData) => prevData.filter((item) => item.id !== itemId))
-    } catch (error) {}
+      const imageRef = ref(storage, `/images/${itemId}.jpg`)
+      await deleteObject(imageRef)
+      console.log('item has been deleted')
+    } catch (error) {
+      console.error('Error deleting item', error)
+    }
   }
 
   return (
