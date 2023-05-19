@@ -88,6 +88,9 @@ const ThePage = () => {
       await deleteDoc(itemDoc)
       setData((prevData) => prevData.filter((item) => item.id !== itemId))
 
+      // Remove the image URL field from the Firestore document
+      await updateDoc(itemDoc, { imageUrl: deleteField() })
+
       console.log('Item has been deleted successfully')
     } catch (error) {
       console.error('Error deleting item:', error)
