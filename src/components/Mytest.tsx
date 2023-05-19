@@ -10,6 +10,7 @@ const Mytest = ({ item }: Props) => {
     <div>
       <h2>{item.name}</h2>
       <img src={item.imageUrl} alt="" />
+      <button onClick={item.onDelete}></button>
     </div>
   )
 }
