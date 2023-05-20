@@ -5,24 +5,10 @@ import {
   getDownloadURL,
   listAll,
 } from 'firebase/storage'
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot,
-  doc,
-} from 'firebase/firestore'
+import { getFirestore, collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { storage } from '../config/firebase'
 import { v4 as uuidv4 } from 'uuid'
-
-interface ImageData {
-  id: string
-  name: string
-  github: string
-  live: string
-  imageUrl: string
-}
 
 function TheForm(): JSX.Element {
   const [imageUpload, setImageUpload] = useState<File | null>(null)
@@ -32,35 +18,6 @@ function TheForm(): JSX.Element {
   const [live, setLive] = useState<string>('')
   const navigate = useNavigate()
   const imagesListRef = storageRef(storage, 'images/')
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      const response = await listAll(imagesListRef)
-      const urls = await Promise.all(
-        response.items.map((item) => getDownloadURL(item))
-      )
-      setImageUrls(urls)
-    }
-    fetchImages()
-  }, [])
-
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    if (event.target.files && event.target.files[0]) {
-      setImageUpload(event.target.files[0])
-    }
-  }
-
-  const handleNameChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setName(event.target.value)
-  }
-
-  const handleGithubChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setGithub(event.target.value)
-  }
-
-  const handleLiveChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setLive(event.target.value)
-  }
 
   const uploadFile = async (): Promise<void> => {
     if (
@@ -79,8 +36,7 @@ function TheForm(): JSX.Element {
       const snapshot = await uploadBytes(imageRef, imageUpload)
       const imageUrl = await getDownloadURL(snapshot.ref)
 
-      const imageData: ImageData = {
-        id: uuidv4(),
+      const imageData = {
         name: name,
         github: github,
         live: live,
@@ -96,6 +52,36 @@ function TheForm(): JSX.Element {
     } catch (error) {
       console.error('Error uploading image:', error)
     }
+  }
+
+  useEffect(() => {
+    listAll(imagesListRef)
+      .then((response) =>
+        Promise.all(response.items.map((item) => getDownloadURL(item)))
+      )
+      .then((urls) => {
+        setImageUrls(urls)
+      })
+      .catch((error) => {
+        console.error('Error fetching images:', error)
+      })
+  }, [])
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    if (event.target.files && event.target.files[0]) {
+      setImageUpload(event.target.files[0])
+    }
+  }
+
+  const handleNameChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setName(event.target.value)
+  }
+
+  const handleGithubChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setGithub(event.target.value)
+  }
+  const handleLiveChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setLive(event.target.value)
   }
 
   return (
@@ -121,10 +107,7 @@ function TheForm(): JSX.Element {
       />
       <button onClick={uploadFile}>Upload Image</button>
       {imageUrls.map((url) => (
-        <div key={url}>
-          <img src={url} alt="Uploaded" />
-          <p>{github}</p>
-        </div>
+        <img key={url} src={url} alt="Uploaded" />
       ))}
     </div>
   )
