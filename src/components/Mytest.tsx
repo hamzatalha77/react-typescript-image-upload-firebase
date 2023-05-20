@@ -3,7 +3,7 @@ import { DataItem } from '../interface/DataItemInterface'
 
 interface Props {
   item: DataItem
-  handleUpdateClick: (item: DataItem) => void
+  handleUpdateClick: (item: DataItem) => void // Add this prop
 }
 
 const Mytest = ({ item, handleUpdateClick }: Props) => {
@@ -16,5 +16,4 @@ const Mytest = ({ item, handleUpdateClick }: Props) => {
     </div>
   )
 }
-
 export default Mytest
