@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   getFirestore,
   collection,
@@ -9,7 +9,8 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  QueryDocumentSnapshot, // Update the import statement for QueryDocumentSnapshot
+  QueryDocumentSnapshot,
+  updateDoc, // Import updateDoc from 'firebase/firestore'
 } from 'firebase/firestore'
 import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '../config/firebase'
@@ -18,6 +19,10 @@ import Mytest from '../components/Mytest'
 
 const ThePage = () => {
   const [data, setData] = useState<DataItem[]>([])
+  const [updateName, setUpdateName] = useState<string>('')
+  const [updateGithub, setUpdateGithub] = useState<string>('')
+  const [updateLive, setUpdateLive] = useState<string>('')
+  const [updateItemId, setUpdateItemId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,7 +53,7 @@ const ThePage = () => {
               github: doc.data().github,
               live: doc.data().live,
               imageUrl: imageUrls[index],
-              onDelete: () => deleteDataItem(doc.id), // Pass the document ID to deleteDataItem
+              onDelete: () => deleteDataItem(doc.id),
             }
             dataItems.push(dataItem)
           }
@@ -95,19 +100,84 @@ const ThePage = () => {
     }
   }
 
+  const handleUpdateClick = (item: DataItem) => {
+    setUpdateItemId(item.id)
+    setUpdateName(item.name)
+    setUpdateGithub(item.github)
+    setUpdateLive(item.live)
+  }
+
+  const handleUpdate = async () => {
+    try {
+      if (!updateItemId) {
+        console.log('Invalid item ID')
+        return
+      }
+
+      const db = getFirestore()
+      const itemDoc = doc(db, 'portfolios', updateItemId)
+
+      // Check if the document exists before updating
+      const docSnapshot = await getDoc(itemDoc)
+      if (!docSnapshot.exists()) {
+        console.log('Document does not exist')
+        return
+      }
+
+      const data = docSnapshot.data()
+      const imageUrl = data?.imageUrl
+
+      // Update the document with new data
+      await updateDoc(itemDoc, {
+        name: updateName,
+        github: updateGithub,
+        live: updateLive,
+      })
+
+      console.log('Item has been updated successfully')
+
+      // Reset the update form
+      setUpdateItemId(null)
+      setUpdateName('')
+      setUpdateGithub('')
+      setUpdateLive('')
+    } catch (error) {
+      console.error('Error updating item:', error)
+    }
+  }
+
   return (
     <>
       <div>
-        <form action="">
-          <input type="text" name="name" />
-          <input type="text" name="github" />
-          <input type="text" name="live" />
-          <input type="file" name="image" />
+        <form>
+          <input
+            type="text"
+            name="name"
+            value={updateName}
+            onChange={(e) => setUpdateName(e.target.value)}
+          />
+          <input
+            type="text"
+            name="github"
+            value={updateGithub}
+            onChange={(e) => setUpdateGithub(e.target.value)}
+          />
+          <input
+            type="text"
+            name="live"
+            value={updateLive}
+            onChange={(e) => setUpdateLive(e.target.value)}
+          />
+          <button onClick={handleUpdate}>Update</button>
         </form>
       </div>
       <div>
         {data.map((item) => (
-          <Mytest key={item.id} item={item} /> // Pass 'item' prop to Mytest component
+          <Mytest
+            key={item.id}
+            item={item}
+            handleUpdateClick={handleUpdateClick}
+          />
         ))}
       </div>
     </>
