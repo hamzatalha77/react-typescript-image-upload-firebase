@@ -5,7 +5,7 @@ import {
   getDownloadURL,
   listAll,
 } from 'firebase/storage'
-import { getFirestore, collection, addDoc } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { storage } from '../config/firebase'
 import { v4 as uuidv4 } from 'uuid'
@@ -16,6 +16,7 @@ function TheForm(): JSX.Element {
   const [name, setName] = useState<string>('')
   const [github, setGithub] = useState<string>('')
   const [live, setLive] = useState<string>('')
+  const [itemId, setItemId] = useState<string>('')
   const navigate = useNavigate()
   const imagesListRef = storageRef(storage, 'images/')
 
@@ -46,8 +47,15 @@ function TheForm(): JSX.Element {
       const db = getFirestore()
       const imagesCollection = collection(db, 'portfolios')
 
-      await addDoc(imagesCollection, imageData)
-      console.log('Image data stored successfully')
+      if (itemId) {
+        const itemDoc = doc(imagesCollection, itemId)
+        await updateDoc(itemDoc, imageData)
+        console.log('item updated successfully')
+      } else {
+        await addDoc(imagesCollection, imageData)
+        console.log('Image data stored successfully')
+      }
+
       navigate('/thepage')
     } catch (error) {
       console.error('Error uploading image:', error)
