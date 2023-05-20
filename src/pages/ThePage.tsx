@@ -25,6 +25,8 @@ const ThePage = () => {
   const [updateLive, setUpdateLive] = useState<string>('')
   const [updateItemId, setUpdateItemId] = useState<string | null>(null)
 
+  const [imageUrls, setImageUrls] = useState<string[]>([]) // Declare imageUrls array
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -44,7 +46,8 @@ const ThePage = () => {
           return imageUrl
         })
 
-        const imageUrls = await Promise.all(imagePromises)
+        const fetchedImageUrls = await Promise.all(imagePromises)
+        setImageUrls(fetchedImageUrls) // Update imageUrls with fetched URLs
 
         querySnapshot.docs.forEach(
           (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
@@ -53,7 +56,7 @@ const ThePage = () => {
               name: doc.data().name,
               github: doc.data().github,
               live: doc.data().live,
-              imageUrl: imageUrls[index],
+              imageUrl: fetchedImageUrls[index], // Use fetched URLs from imageUrls array
               onDelete: () => deleteDataItem(doc.id),
             }
             dataItems.push(dataItem)
@@ -131,9 +134,6 @@ const ThePage = () => {
         return
       }
 
-      const data = docSnapshot.data()
-      const imageUrl = data?.imageUrl
-
       // Update the document with new data
       await updateDoc(itemDoc, {
         name: updateName,
@@ -144,19 +144,11 @@ const ThePage = () => {
       console.log('Item has been updated successfully')
 
       // Fetch the updated data again
-      const collectionRef = collection(db, 'portfolios')
       const updatedQuerySnapshot: QuerySnapshot<DocumentData> = await getDocs(
-        query(collectionRef)
+        query(collection(db, 'portfolios'))
       )
 
       const updatedDataItems: DataItem[] = []
-      const imagesList = await listAll(ref(storage, '/images'))
-      const imagePromises = imagesList.items.map(async (imageRef) => {
-        const imageUrl = await getDownloadURL(imageRef)
-        return imageUrl
-      })
-      const imageUrls = await Promise.all(imagePromises)
-
       updatedQuerySnapshot.docs.forEach(
         (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
           const updatedDataItem: DataItem = {
@@ -164,7 +156,7 @@ const ThePage = () => {
             name: doc.data().name,
             github: doc.data().github,
             live: doc.data().live,
-            imageUrl: imageUrls[index],
+            imageUrl: imageUrls[index], // Use imageUrls array
             onDelete: () => deleteDataItem(doc.id),
           }
           updatedDataItems.push(updatedDataItem)
