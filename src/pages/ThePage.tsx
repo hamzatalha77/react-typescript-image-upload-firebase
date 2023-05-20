@@ -12,14 +12,7 @@ import {
   QueryDocumentSnapshot,
   updateDoc,
 } from 'firebase/firestore'
-import {
-  ref,
-  listAll,
-  getDownloadURL,
-  deleteObject,
-  uploadBytes,
-  uploadBytesResumable,
-} from 'firebase/storage'
+import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '../config/firebase'
 import { DataItem } from '../interface/DataItemInterface'
 import Mytest from '../components/Mytest'
@@ -31,7 +24,6 @@ const ThePage = () => {
   const [updateGithub, setUpdateGithub] = useState<string>('')
   const [updateLive, setUpdateLive] = useState<string>('')
   const [updateItemId, setUpdateItemId] = useState<string | null>(null)
-  const [updateImage, setUpdateImage] = useState<File | null>(null) // State for the updated image
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
 
@@ -45,41 +37,32 @@ const ThePage = () => {
 
         const dataItems: DataItem[] = []
 
+        const imagesList = await listAll(ref(storage, '/images'))
+
+        const imagePromises = imagesList.items.map(async (imageRef) => {
+          const imageUrl = await getDownloadURL(imageRef)
+          return imageUrl
+        })
+
+        const fetchedImageUrls = await Promise.all(imagePromises)
+        setImageUrls(fetchedImageUrls)
+
         querySnapshot.docs.forEach(
-          (doc: QueryDocumentSnapshot<DocumentData>) => {
+          (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
             const dataItem: DataItem = {
               id: doc.id,
               name: doc.data().name,
               github: doc.data().github,
               live: doc.data().live,
-              imageUrl: '', // Initialize imageUrl as empty
+              imageUrl: fetchedImageUrls[index],
               onDelete: () => deleteDataItem(doc.id),
             }
             dataItems.push(dataItem)
           }
         )
 
-        setFetchedData(dataItems) // Set fetchedData without imageUrl initially
-
-        // Fetch images from Firebase Storage
-        const imagesList = await listAll(ref(storage, '/images'))
-
-        // Get download URLs for each image
-        const imagePromises = imagesList.items.map(async (imageRef, index) => {
-          const imageUrl = await getDownloadURL(imageRef)
-          // Update the fetchedData array with the corresponding imageUrl
-          setFetchedData((prevData) =>
-            prevData.map((item, idx) =>
-              idx === index ? { ...item, imageUrl } : item
-            )
-          )
-          return imageUrl
-        })
-
-        const fetchedImageUrls = await Promise.all(imagePromises)
-        setImageUrls(fetchedImageUrls) // Update imageUrls with fetched URLs
-
-        setUpdatedData(dataItems) // Set updatedData initially with fetchedData
+        setFetchedData(dataItems)
+        setUpdatedData(dataItems)
       } catch (error) {
         console.error('Error fetching data:', error)
       }
@@ -122,6 +105,40 @@ const ThePage = () => {
     }
   }
 
+  const fetchUpdatedData = async () => {
+    try {
+      const db = getFirestore()
+      const updatedQuerySnapshot: QuerySnapshot<DocumentData> = await getDocs(
+        query(collection(db, 'portfolios'))
+      )
+
+      const updatedDataItems: DataItem[] = []
+      updatedQuerySnapshot.docs.forEach(
+        (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
+          const updatedDataItem: DataItem = {
+            id: doc.id,
+            name: doc.data().name,
+            github: doc.data().github,
+            live: doc.data().live,
+            imageUrl: imageUrls[index],
+            onDelete: () => deleteDataItem(doc.id),
+          }
+          updatedDataItems.push(updatedDataItem)
+        }
+      )
+
+      setUpdatedData(updatedDataItems)
+
+      // Reset the update form
+      setUpdateItemId(null)
+      setUpdateName('')
+      setUpdateGithub('')
+      setUpdateLive('')
+    } catch (error) {
+      console.error('Error updating item:', error)
+    }
+  }
+
   const handleUpdateClick = (item: DataItem) => {
     setUpdateItemId(item.id)
     setUpdateName(item.name)
@@ -145,73 +162,15 @@ const ThePage = () => {
         return
       }
 
-      const currentData = docSnapshot.data()
-      const currentImageUrl = currentData?.imageUrl
-
-      // Upload the new image if provided
-      let updatedImageUrl = currentImageUrl
-      if (updateImage) {
-        const imageRef = ref(storage, `/images/${updateImage.name}`)
-        await uploadBytes(imageRef, updateImage) // Use uploadBytes instead of uploadBytesResumable
-
-        updatedImageUrl = await getDownloadURL(imageRef)
-        console.log('Image uploaded successfully')
-      }
-
-      // Update the document with new data
       await updateDoc(itemDoc, {
         name: updateName,
         github: updateGithub,
         live: updateLive,
-        imageUrl: updatedImageUrl,
       })
 
       console.log('Item has been updated successfully')
 
       await fetchUpdatedData() // Fetch the updated data again
-    } catch (error) {
-      console.error('Error updating item:', error)
-    }
-  }
-
-  const fetchUpdatedData = async () => {
-    try {
-      const db = getFirestore()
-      const updatedQuerySnapshot: QuerySnapshot<DocumentData> = await getDocs(
-        query(collection(db, 'portfolios'))
-      )
-
-      const updatedDataItems: DataItem[] = []
-
-      updatedQuerySnapshot.docs.forEach(
-        (doc: QueryDocumentSnapshot<DocumentData>) => {
-          const updatedDataItem: DataItem = {
-            id: doc.id,
-            name: doc.data().name,
-            github: doc.data().github,
-            live: doc.data().live,
-            imageUrl: doc.data().imageUrl, // Update imageUrl property
-            onDelete: () => deleteDataItem(doc.id),
-          }
-
-          updatedDataItems.push(updatedDataItem)
-        }
-      )
-
-      // Update the fetchedData and updatedData state with updated imageUrls
-      const updatedDataWithImages = updatedDataItems.map((item, index) => ({
-        ...item,
-        imageUrl: imageUrls[index],
-      }))
-
-      setFetchedData(updatedDataWithImages)
-      setUpdatedData(updatedDataWithImages)
-
-      setUpdateItemId(null)
-      setUpdateName('')
-      setUpdateGithub('')
-      setUpdateLive('')
-      setUpdateImage(null)
     } catch (error) {
       console.error('Error updating item:', error)
     }
@@ -239,13 +198,9 @@ const ThePage = () => {
             value={updateLive}
             onChange={(e) => setUpdateLive(e.target.value)}
           />
-          <input
-            type="file"
-            name="image"
-            accept="image/*"
-            onChange={(e) => setUpdateImage(e.target.files?.[0] || null)}
-          />
-          <button onClick={handleUpdate}>Update</button>
+          <button type="button" onClick={handleUpdate}>
+            Update
+          </button>
         </form>
       </div>
       <div>
