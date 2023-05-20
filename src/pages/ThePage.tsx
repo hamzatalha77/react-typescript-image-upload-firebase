@@ -96,11 +96,21 @@ const ThePage = () => {
   }
 
   return (
-    <div>
-      {data.map((item) => (
-        <Mytest key={item.id} item={item} /> // Pass 'item' prop to Mytest component
-      ))}
-    </div>
+    <>
+      <div>
+        <form action="">
+          <input type="text" name="name" />
+          <input type="text" name="github" />
+          <input type="text" name="live" />
+          <input type="file" name="image" />
+        </form>
+      </div>
+      <div>
+        {data.map((item) => (
+          <Mytest key={item.id} item={item} /> // Pass 'item' prop to Mytest component
+        ))}
+      </div>
+    </>
   )
 }
 
