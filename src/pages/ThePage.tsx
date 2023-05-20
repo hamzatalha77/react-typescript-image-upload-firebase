@@ -12,7 +12,13 @@ import {
   QueryDocumentSnapshot,
   updateDoc,
 } from 'firebase/firestore'
-import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
+import {
+  ref,
+  listAll,
+  getDownloadURL,
+  deleteObject,
+  uploadBytes,
+} from 'firebase/storage'
 import { storage } from '../config/firebase'
 import { DataItem } from '../interface/DataItemInterface'
 import Mytest from '../components/Mytest'
@@ -24,8 +30,9 @@ const ThePage = () => {
   const [updateGithub, setUpdateGithub] = useState<string>('')
   const [updateLive, setUpdateLive] = useState<string>('')
   const [updateItemId, setUpdateItemId] = useState<string | null>(null)
+  const [updateImage, setUpdateImage] = useState<File | null>(null)
 
-  const [imageUrls, setImageUrls] = useState<string[]>([]) // Declare imageUrls array
+  const [imageUrls, setImageUrls] = useState<string[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,17 +44,15 @@ const ThePage = () => {
 
         const dataItems: DataItem[] = []
 
-        // Fetch images from Firebase Storage
         const imagesList = await listAll(ref(storage, '/images'))
 
-        // Get download URLs for each image
         const imagePromises = imagesList.items.map(async (imageRef) => {
           const imageUrl = await getDownloadURL(imageRef)
           return imageUrl
         })
 
         const fetchedImageUrls = await Promise.all(imagePromises)
-        setImageUrls(fetchedImageUrls) // Update imageUrls with fetched URLs
+        setImageUrls(fetchedImageUrls)
 
         querySnapshot.docs.forEach(
           (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
@@ -56,7 +61,7 @@ const ThePage = () => {
               name: doc.data().name,
               github: doc.data().github,
               live: doc.data().live,
-              imageUrl: fetchedImageUrls[index], // Use fetched URLs from imageUrls array
+              imageUrl: fetchedImageUrls[index],
               onDelete: () => deleteDataItem(doc.id),
             }
             dataItems.push(dataItem)
@@ -77,9 +82,8 @@ const ThePage = () => {
     try {
       const db = getFirestore()
       const itemDoc = doc(db, 'portfolios', itemId)
-
-      // Check if the document exists before deleting
       const docSnapshot = await getDoc(itemDoc)
+
       if (!docSnapshot.exists()) {
         console.log('Document does not exist')
         return
@@ -88,7 +92,6 @@ const ThePage = () => {
       const data = docSnapshot.data()
       const imageUrl = data?.imageUrl
 
-      // Delete the Firestore document
       await deleteDoc(itemDoc)
       setFetchedData((prevData) =>
         prevData.filter((item) => item.id !== itemId)
@@ -97,7 +100,6 @@ const ThePage = () => {
         prevData.filter((item) => item.id !== itemId)
       )
 
-      // Delete the image from Firebase Storage
       if (imageUrl) {
         const imageRef = ref(storage, imageUrl)
         await deleteObject(imageRef)
@@ -117,6 +119,12 @@ const ThePage = () => {
     setUpdateLive(item.live)
   }
 
+  const handleUpdateImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setUpdateImage(e.target.files[0])
+    }
+  }
+
   const handleUpdate = async () => {
     try {
       if (!updateItemId) {
@@ -126,15 +134,40 @@ const ThePage = () => {
 
       const db = getFirestore()
       const itemDoc = doc(db, 'portfolios', updateItemId)
-
-      // Check if the document exists before updating
       const docSnapshot = await getDoc(itemDoc)
+
       if (!docSnapshot.exists()) {
         console.log('Document does not exist')
         return
       }
 
-      // Update the document with new data
+      if (updateImage) {
+        // Delete the previous image from Firebase Storage
+        const data = docSnapshot.data()
+        const imageUrl = data?.imageUrl
+
+        if (imageUrl) {
+          const imageRef = ref(storage, imageUrl)
+          await deleteObject(imageRef)
+          console.log('Previous image has been deleted successfully')
+        }
+
+        // Upload the new image to Firebase Storage
+        const imageRef = ref(storage, `/images/${updateImage.name}`)
+        await uploadBytes(imageRef, updateImage)
+        console.log('New image has been uploaded successfully')
+
+        // Get the download URL of the new image
+        const newImageUrl = await getDownloadURL(imageRef)
+
+        // Update the document with the new image URL
+        await updateDoc(itemDoc, {
+          imageUrl: newImageUrl,
+        })
+        console.log('Item image has been updated successfully')
+      }
+
+      // Update the document with other data
       await updateDoc(itemDoc, {
         name: updateName,
         github: updateGithub,
@@ -143,7 +176,15 @@ const ThePage = () => {
 
       console.log('Item has been updated successfully')
 
-      // Fetch the updated data again
+      await fetchUpdatedData() // Fetch the updated data again
+    } catch (error) {
+      console.error('Error updating item:', error)
+    }
+  }
+
+  const fetchUpdatedData = async () => {
+    try {
+      const db = getFirestore()
       const updatedQuerySnapshot: QuerySnapshot<DocumentData> = await getDocs(
         query(collection(db, 'portfolios'))
       )
@@ -156,7 +197,7 @@ const ThePage = () => {
             name: doc.data().name,
             github: doc.data().github,
             live: doc.data().live,
-            imageUrl: imageUrls[index], // Use imageUrls array
+            imageUrl: imageUrls[index],
             onDelete: () => deleteDataItem(doc.id),
           }
           updatedDataItems.push(updatedDataItem)
@@ -165,11 +206,11 @@ const ThePage = () => {
 
       setUpdatedData(updatedDataItems)
 
-      // Reset the update form
       setUpdateItemId(null)
       setUpdateName('')
       setUpdateGithub('')
       setUpdateLive('')
+      setUpdateImage(null)
     } catch (error) {
       console.error('Error updating item:', error)
     }
@@ -197,6 +238,7 @@ const ThePage = () => {
             value={updateLive}
             onChange={(e) => setUpdateLive(e.target.value)}
           />
+          <input type="file" name="image" onChange={handleUpdateImageChange} />
           <button onClick={handleUpdate}>Update</button>
         </form>
       </div>
