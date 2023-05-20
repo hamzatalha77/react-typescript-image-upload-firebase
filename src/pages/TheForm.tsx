@@ -27,6 +27,7 @@ function TheForm({ itemId }: TheFormProps): JSX.Element {
   const [name, setName] = useState<string>('')
   const [github, setGithub] = useState<string>('')
   const [live, setLive] = useState<string>('')
+  const [image, setImage] = useState<string>('')
   const navigate = useNavigate()
   const imagesListRef = storageRef(storage, 'images/')
 
@@ -43,6 +44,7 @@ function TheForm({ itemId }: TheFormProps): JSX.Element {
             setName(itemData.name)
             setGithub(itemData.github)
             setLive(itemData.live)
+            setImage(itemData.imageUrl)
           }
         }
       } catch (error) {
@@ -56,32 +58,29 @@ function TheForm({ itemId }: TheFormProps): JSX.Element {
   }, [itemId])
 
   const uploadFile = async (): Promise<void> => {
-    if (name.trim() === '' || github.trim() === '' || live.trim() === '') {
+    if (
+      imageUpload === null ||
+      name.trim() === '' ||
+      github.trim() === '' ||
+      live.trim() === ''
+    ) {
       return
     }
 
-    let imageUrl = ''
-    if (imageUpload) {
-      const newImageName = name + uuidv4()
-      const imageRef = storageRef(storage, `images/${newImageName}`)
-
-      try {
-        const snapshot = await uploadBytes(imageRef, imageUpload)
-        imageUrl = await getDownloadURL(snapshot.ref)
-      } catch (error) {
-        console.error('Error uploading image:', error)
-        return
-      }
-    }
-
-    const imageData = {
-      name: name,
-      github: github,
-      live: live,
-      imageUrl: imageUrl,
-    }
+    const newImageName = name + uuidv4()
+    const imageRef = storageRef(storage, `images/${newImageName}`)
 
     try {
+      const snapshot = await uploadBytes(imageRef, imageUpload)
+      const imageUrl = await getDownloadURL(snapshot.ref)
+
+      const imageData = {
+        name: name,
+        github: github,
+        live: live,
+        imageUrl: snapshot.ref.fullPath,
+      }
+
       const db = getFirestore()
       const imagesCollection = collection(db, 'portfolios')
 
@@ -96,7 +95,7 @@ function TheForm({ itemId }: TheFormProps): JSX.Element {
 
       navigate('/thepage')
     } catch (error) {
-      console.error('Error storing image data:', error)
+      console.error('Error uploading image:', error)
     }
   }
 
@@ -133,6 +132,8 @@ function TheForm({ itemId }: TheFormProps): JSX.Element {
 
   return (
     <div className="App">
+      {image && <img src={image} alt="Fetched Image" />}
+
       <input type="file" onChange={handleFileChange} />
       <input
         type="text"
@@ -142,19 +143,17 @@ function TheForm({ itemId }: TheFormProps): JSX.Element {
       />
       <input
         type="text"
-        placeholder="Enter GitHub link"
+        placeholder="Enter github link"
         value={github}
         onChange={handleGithubChange}
       />
       <input
         type="text"
-        placeholder="Enter live URL"
+        placeholder="Enter live url"
         value={live}
         onChange={handleLiveChange}
       />
-      <button onClick={uploadFile}>
-        {itemId ? 'Update Item' : 'Upload Image'}
-      </button>
+      <button onClick={uploadFile}>Upload Image</button>
       {imageUrls.map((url) => (
         <img key={url} src={url} alt="Uploaded" />
       ))}
