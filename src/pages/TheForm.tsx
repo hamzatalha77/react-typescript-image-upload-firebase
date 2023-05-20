@@ -5,7 +5,13 @@ import {
   getDownloadURL,
   listAll,
 } from 'firebase/storage'
-import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore'
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+} from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { storage } from '../config/firebase'
 import { v4 as uuidv4 } from 'uuid'
@@ -50,7 +56,7 @@ function TheForm(): JSX.Element {
       if (itemId) {
         const itemDoc = doc(imagesCollection, itemId)
         await updateDoc(itemDoc, imageData)
-        console.log('item updated successfully')
+        console.log('Item updated successfully')
       } else {
         await addDoc(imagesCollection, imageData)
         console.log('Image data stored successfully')
