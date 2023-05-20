@@ -124,14 +124,16 @@ const ThePage = () => {
         return
       }
 
-      const data = docSnapshot.data()
-      const imageUrl = data?.imageUrl
+      // Update the state values with the new input values
+      const updatedName = updateName
+      const updatedGithub = updateGithub
+      const updatedLive = updateLive
 
       // Update the document with new data
       await updateDoc(itemDoc, {
-        name: updateName,
-        github: updateGithub,
-        live: updateLive,
+        name: updatedName,
+        github: updatedGithub,
+        live: updatedLive,
       })
 
       console.log('Item has been updated successfully')
