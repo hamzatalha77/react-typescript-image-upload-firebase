@@ -10,7 +10,7 @@ import {
   doc,
   getDoc,
   QueryDocumentSnapshot,
-  updateDoc, // Import updateDoc from 'firebase/firestore'
+  updateDoc,
 } from 'firebase/firestore'
 import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '../config/firebase'
@@ -131,34 +131,46 @@ const ThePage = () => {
         return
       }
 
-      // Update the state values with the new input values
-      const updatedName = updateName
-      const updatedGithub = updateGithub
-      const updatedLive = updateLive
+      const data = docSnapshot.data()
+      const imageUrl = data?.imageUrl
 
       // Update the document with new data
       await updateDoc(itemDoc, {
-        name: updatedName,
-        github: updatedGithub,
-        live: updatedLive,
+        name: updateName,
+        github: updateGithub,
+        live: updateLive,
       })
 
       console.log('Item has been updated successfully')
 
-      // Update the fetched data with the updated document
-      const updatedDataItems = fetchedData.map((item) => {
-        if (item.id === updateItemId) {
-          return {
-            ...item,
-            name: updatedName,
-            github: updatedGithub,
-            live: updatedLive,
-          }
-        }
-        return item
-      })
+      // Fetch the updated data again
+      const collectionRef = collection(db, 'portfolios')
+      const updatedQuerySnapshot: QuerySnapshot<DocumentData> = await getDocs(
+        query(collectionRef)
+      )
 
-      setFetchedData(updatedDataItems)
+      const updatedDataItems: DataItem[] = []
+      const imagesList = await listAll(ref(storage, '/images'))
+      const imagePromises = imagesList.items.map(async (imageRef) => {
+        const imageUrl = await getDownloadURL(imageRef)
+        return imageUrl
+      })
+      const imageUrls = await Promise.all(imagePromises)
+
+      updatedQuerySnapshot.docs.forEach(
+        (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
+          const updatedDataItem: DataItem = {
+            id: doc.id,
+            name: doc.data().name,
+            github: doc.data().github,
+            live: doc.data().live,
+            imageUrl: imageUrls[index],
+            onDelete: () => deleteDataItem(doc.id),
+          }
+          updatedDataItems.push(updatedDataItem)
+        }
+      )
+
       setUpdatedData(updatedDataItems)
 
       // Reset the update form
