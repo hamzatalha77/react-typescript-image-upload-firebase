@@ -8,48 +8,80 @@ import {
 import {
   getFirestore,
   collection,
-  addDoc,
   updateDoc,
   doc,
+  getDoc,
+  addDoc,
 } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { storage } from '../config/firebase'
 import { v4 as uuidv4 } from 'uuid'
 
-function TheForm(): JSX.Element {
+interface TheFormProps {
+  itemId?: string
+}
+
+function TheForm({ itemId }: TheFormProps): JSX.Element {
   const [imageUpload, setImageUpload] = useState<File | null>(null)
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [name, setName] = useState<string>('')
   const [github, setGithub] = useState<string>('')
   const [live, setLive] = useState<string>('')
-  const [itemId, setItemId] = useState<string>('')
   const navigate = useNavigate()
   const imagesListRef = storageRef(storage, 'images/')
 
+  useEffect(() => {
+    const fetchData = async (): Promise<void> => {
+      try {
+        const db = getFirestore()
+        const itemDoc = doc(collection(db, 'portfolios'), itemId)
+        const itemSnapshot = await getDoc(itemDoc)
+
+        if (itemSnapshot.exists()) {
+          const itemData = itemSnapshot.data()
+          if (itemData) {
+            setName(itemData.name)
+            setGithub(itemData.github)
+            setLive(itemData.live)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+
+    if (itemId) {
+      fetchData()
+    }
+  }, [itemId])
+
   const uploadFile = async (): Promise<void> => {
-    if (
-      imageUpload === null ||
-      name.trim() === '' ||
-      github.trim() === '' ||
-      live.trim() === ''
-    ) {
+    if (name.trim() === '' || github.trim() === '' || live.trim() === '') {
       return
     }
 
-    const newImageName = name + uuidv4()
-    const imageRef = storageRef(storage, `images/${newImageName}`)
+    let imageUrl = ''
+    if (imageUpload) {
+      const newImageName = name + uuidv4()
+      const imageRef = storageRef(storage, `images/${newImageName}`)
+
+      try {
+        const snapshot = await uploadBytes(imageRef, imageUpload)
+        imageUrl = await getDownloadURL(snapshot.ref)
+      } catch (error) {
+        console.error('Error uploading image:', error)
+        return
+      }
+    }
+
+    const imageData = {
+      name: name,
+      github: github,
+      live: live,
+      imageUrl: imageUrl,
+    }
 
     try {
-      const snapshot = await uploadBytes(imageRef, imageUpload)
-      const imageUrl = await getDownloadURL(snapshot.ref)
-
-      const imageData = {
-        name: name,
-        github: github,
-        live: live,
-        imageUrl: snapshot.ref.fullPath,
-      }
-
       const db = getFirestore()
       const imagesCollection = collection(db, 'portfolios')
 
@@ -64,7 +96,7 @@ function TheForm(): JSX.Element {
 
       navigate('/thepage')
     } catch (error) {
-      console.error('Error uploading image:', error)
+      console.error('Error storing image data:', error)
     }
   }
 
@@ -94,6 +126,7 @@ function TheForm(): JSX.Element {
   const handleGithubChange = (event: ChangeEvent<HTMLInputElement>): void => {
     setGithub(event.target.value)
   }
+
   const handleLiveChange = (event: ChangeEvent<HTMLInputElement>): void => {
     setLive(event.target.value)
   }
@@ -109,17 +142,19 @@ function TheForm(): JSX.Element {
       />
       <input
         type="text"
-        placeholder="Enter github link"
+        placeholder="Enter GitHub link"
         value={github}
         onChange={handleGithubChange}
       />
       <input
         type="text"
-        placeholder="Enter live url"
+        placeholder="Enter live URL"
         value={live}
         onChange={handleLiveChange}
       />
-      <button onClick={uploadFile}>Upload Image</button>
+      <button onClick={uploadFile}>
+        {itemId ? 'Update Item' : 'Upload Image'}
+      </button>
       {imageUrls.map((url) => (
         <img key={url} src={url} alt="Uploaded" />
       ))}
