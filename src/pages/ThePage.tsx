@@ -18,7 +18,8 @@ import { DataItem } from '../interface/DataItemInterface'
 import Mytest from '../components/Mytest'
 
 const ThePage = () => {
-  const [data, setData] = useState<DataItem[]>([])
+  const [fetchedData, setFetchedData] = useState<DataItem[]>([])
+  const [updatedData, setUpdatedData] = useState<DataItem[]>([])
   const [updateName, setUpdateName] = useState<string>('')
   const [updateGithub, setUpdateGithub] = useState<string>('')
   const [updateLive, setUpdateLive] = useState<string>('')
@@ -59,7 +60,8 @@ const ThePage = () => {
           }
         )
 
-        setData(dataItems)
+        setFetchedData(dataItems)
+        setUpdatedData(dataItems)
       } catch (error) {
         console.error('Error fetching data:', error)
       }
@@ -85,7 +87,12 @@ const ThePage = () => {
 
       // Delete the Firestore document
       await deleteDoc(itemDoc)
-      setData((prevData) => prevData.filter((item) => item.id !== itemId))
+      setFetchedData((prevData) =>
+        prevData.filter((item) => item.id !== itemId)
+      )
+      setUpdatedData((prevData) =>
+        prevData.filter((item) => item.id !== itemId)
+      )
 
       // Delete the image from Firebase Storage
       if (imageUrl) {
@@ -138,6 +145,22 @@ const ThePage = () => {
 
       console.log('Item has been updated successfully')
 
+      // Update the fetched data with the updated document
+      const updatedDataItems = fetchedData.map((item) => {
+        if (item.id === updateItemId) {
+          return {
+            ...item,
+            name: updatedName,
+            github: updatedGithub,
+            live: updatedLive,
+          }
+        }
+        return item
+      })
+
+      setFetchedData(updatedDataItems)
+      setUpdatedData(updatedDataItems)
+
       // Reset the update form
       setUpdateItemId(null)
       setUpdateName('')
@@ -174,7 +197,7 @@ const ThePage = () => {
         </form>
       </div>
       <div>
-        {data.map((item) => (
+        {updatedData.map((item) => (
           <Mytest
             key={item.id}
             item={item}
