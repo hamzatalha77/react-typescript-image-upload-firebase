@@ -44,26 +44,42 @@ const ThePage = () => {
         const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q)
 
         const dataItems: DataItem[] = []
-        const fetchedImageUrls: string[] = []
 
         querySnapshot.docs.forEach(
-          (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
+          (doc: QueryDocumentSnapshot<DocumentData>) => {
             const dataItem: DataItem = {
               id: doc.id,
               name: doc.data().name,
               github: doc.data().github,
               live: doc.data().live,
-              imageUrl: doc.data().imageUrl,
+              imageUrl: '', // Initialize imageUrl as empty
               onDelete: () => deleteDataItem(doc.id),
             }
             dataItems.push(dataItem)
-            fetchedImageUrls.push(doc.data().imageUrl)
           }
         )
 
-        setFetchedData(dataItems)
-        setUpdatedData(dataItems)
-        setImageUrls(fetchedImageUrls)
+        setFetchedData(dataItems) // Set fetchedData without imageUrl initially
+
+        // Fetch images from Firebase Storage
+        const imagesList = await listAll(ref(storage, '/images'))
+
+        // Get download URLs for each image
+        const imagePromises = imagesList.items.map(async (imageRef, index) => {
+          const imageUrl = await getDownloadURL(imageRef)
+          // Update the fetchedData array with the corresponding imageUrl
+          setFetchedData((prevData) =>
+            prevData.map((item, idx) =>
+              idx === index ? { ...item, imageUrl } : item
+            )
+          )
+          return imageUrl
+        })
+
+        const fetchedImageUrls = await Promise.all(imagePromises)
+        setImageUrls(fetchedImageUrls) // Update imageUrls with fetched URLs
+
+        setUpdatedData(dataItems) // Set updatedData initially with fetchedData
       } catch (error) {
         console.error('Error fetching data:', error)
       }
@@ -136,20 +152,7 @@ const ThePage = () => {
       let updatedImageUrl = currentImageUrl
       if (updateImage) {
         const imageRef = ref(storage, `/images/${updateImage.name}`)
-        const uploadTask = uploadBytesResumable(imageRef, updateImage)
-
-        await uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-            console.log('Upload progress:', progress)
-          },
-          (error) => {
-            console.error('Error uploading image:', error)
-            throw error
-          }
-        )
+        await uploadBytes(imageRef, updateImage) // Use uploadBytes instead of uploadBytesResumable
 
         updatedImageUrl = await getDownloadURL(imageRef)
         console.log('Image uploaded successfully')
@@ -179,7 +182,6 @@ const ThePage = () => {
       )
 
       const updatedDataItems: DataItem[] = []
-      const fetchedImageUrls: string[] = []
 
       updatedQuerySnapshot.docs.forEach(
         (doc: QueryDocumentSnapshot<DocumentData>) => {
@@ -188,16 +190,22 @@ const ThePage = () => {
             name: doc.data().name,
             github: doc.data().github,
             live: doc.data().live,
-            imageUrl: doc.data().imageUrl,
+            imageUrl: doc.data().imageUrl, // Update imageUrl property
             onDelete: () => deleteDataItem(doc.id),
           }
+
           updatedDataItems.push(updatedDataItem)
-          fetchedImageUrls.push(doc.data().imageUrl)
         }
       )
 
-      setUpdatedData(updatedDataItems)
-      setImageUrls(fetchedImageUrls)
+      // Update the fetchedData and updatedData state with updated imageUrls
+      const updatedDataWithImages = updatedDataItems.map((item, index) => ({
+        ...item,
+        imageUrl: imageUrls[index],
+      }))
+
+      setFetchedData(updatedDataWithImages)
+      setUpdatedData(updatedDataWithImages)
 
       setUpdateItemId(null)
       setUpdateName('')
@@ -205,7 +213,7 @@ const ThePage = () => {
       setUpdateLive('')
       setUpdateImage(null)
     } catch (error) {
-      console.error('Error fetching updated data:', error)
+      console.error('Error updating item:', error)
     }
   }
 
