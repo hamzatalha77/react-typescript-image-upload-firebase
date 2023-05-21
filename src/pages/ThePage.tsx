@@ -124,15 +124,26 @@ const ThePage = () => {
 
       const updatedDataItems: DataItem[] = []
       updatedQuerySnapshot.docs.forEach(
-        (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
+        (doc: QueryDocumentSnapshot<DocumentData>) => {
+          const id = doc.id
+          const name = doc.data().name
+          const github = doc.data().github
+          const live = doc.data().live
+
+          const imageUrl = imageUrls.find((url) => {
+            const urlId = url.substring(url.lastIndexOf('/') + 1)
+            return urlId === id
+          })
+
           const updatedDataItem: DataItem = {
-            id: doc.id,
-            name: doc.data().name,
-            github: doc.data().github,
-            live: doc.data().live,
-            imageUrl: imageUrls[index],
-            onDelete: () => deleteDataItem(doc.id),
+            id,
+            name,
+            github,
+            live,
+            imageUrl: imageUrl || '', // Set the imageUrl to an empty string if not found
+            onDelete: () => deleteDataItem(id),
           }
+
           updatedDataItems.push(updatedDataItem)
         }
       )
