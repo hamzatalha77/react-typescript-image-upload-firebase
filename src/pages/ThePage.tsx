@@ -27,6 +27,8 @@ const ThePage = () => {
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
 
+  // ...
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,33 +38,39 @@ const ThePage = () => {
         const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q)
 
         const dataItems: DataItem[] = []
-
-        const imagesList = await listAll(ref(storage, '/images'))
-
-        const imagePromises = imagesList.items.map(async (imageRef) => {
-          const imageUrl = await getDownloadURL(imageRef)
-          return imageUrl
-        })
-
-        const fetchedImageUrls = await Promise.all(imagePromises)
-        setImageUrls(fetchedImageUrls)
+        const fetchedImageUrls: string[] = [] // Store the fetched image URLs
 
         querySnapshot.docs.forEach(
-          (doc: QueryDocumentSnapshot<DocumentData>, index: number) => {
+          (doc: QueryDocumentSnapshot<DocumentData>) => {
             const dataItem: DataItem = {
               id: doc.id,
               name: doc.data().name,
               github: doc.data().github,
               live: doc.data().live,
-              imageUrl: fetchedImageUrls[index],
+              imageUrl: '', // Initially set the imageUrl to an empty string
               onDelete: () => deleteDataItem(doc.id),
             }
             dataItems.push(dataItem)
+
+            // Fetch image URL for each data item and store it in the fetchedImageUrls array
+            getDownloadURL(ref(storage, doc.data().imageUrl))
+              .then((url) => {
+                dataItem.imageUrl = url
+                fetchedImageUrls.push(url)
+
+                // Check if all image URLs have been fetched
+                if (fetchedImageUrls.length === querySnapshot.size) {
+                  // All image URLs have been fetched, update the state
+                  setFetchedData(dataItems)
+                  setUpdatedData(dataItems)
+                  setImageUrls(fetchedImageUrls)
+                }
+              })
+              .catch((error) => {
+                console.error('Error fetching image URL:', error)
+              })
           }
         )
-
-        setFetchedData(dataItems)
-        setUpdatedData(dataItems)
       } catch (error) {
         console.error('Error fetching data:', error)
       }
@@ -70,6 +78,8 @@ const ThePage = () => {
 
     fetchData()
   }, [])
+
+  // ...
 
   const deleteDataItem = async (itemId: string) => {
     try {

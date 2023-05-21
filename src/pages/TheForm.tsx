@@ -155,6 +155,7 @@ function TheForm({ itemId }: TheFormProps): JSX.Element {
       <button onClick={uploadFile}>
         {itemId ? 'Update Item' : 'Upload Image'}
       </button>
+
       {imageUrls.map((url) => (
         <img key={url} src={url} alt="Uploaded" />
       ))}
