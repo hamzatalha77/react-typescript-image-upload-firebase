@@ -11,6 +11,9 @@ const Mytest = ({ item, handleUpdateClick }: Props) => {
     <div>
       <img src={item.imageUrl} alt="" />
       <h2>{item.name}</h2>
+      <h2>{item.github}</h2>
+      <h2>{item.live}</h2>
+
       <button onClick={item.onDelete}>Delete me!</button>
       <button onClick={() => handleUpdateClick(item)}>Update me!</button>
     </div>
