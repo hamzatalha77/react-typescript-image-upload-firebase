@@ -115,6 +115,8 @@ const ThePage = () => {
     }
   }
 
+  // ...
+
   const fetchUpdatedData = async () => {
     try {
       const db = getFirestore()
@@ -123,32 +125,38 @@ const ThePage = () => {
       )
 
       const updatedDataItems: DataItem[] = []
-      updatedQuerySnapshot.docs.forEach(
-        (doc: QueryDocumentSnapshot<DocumentData>) => {
-          const id = doc.id
-          const name = doc.data().name
-          const github = doc.data().github
-          const live = doc.data().live
+      const fetchedImageUrls: string[] = [] // Store the fetched image URLs
 
-          const imageUrl = imageUrls.find((url) => {
-            const urlId = url.substring(url.lastIndexOf('/') + 1)
-            return urlId === id
-          })
+      // Fetch image URLs for each updated data item
+      await Promise.all(
+        updatedQuerySnapshot.docs.map(
+          async (doc: QueryDocumentSnapshot<DocumentData>) => {
+            const id = doc.id
+            const name = doc.data().name
+            const github = doc.data().github
+            const live = doc.data().live
 
-          const updatedDataItem: DataItem = {
-            id,
-            name,
-            github,
-            live,
-            imageUrl: imageUrl || '', // Set the imageUrl to an empty string if not found
-            onDelete: () => deleteDataItem(id),
+            const imageUrl = await getDownloadURL(
+              ref(storage, doc.data().imageUrl)
+            )
+
+            const updatedDataItem: DataItem = {
+              id,
+              name,
+              github,
+              live,
+              imageUrl,
+              onDelete: () => deleteDataItem(id),
+            }
+
+            updatedDataItems.push(updatedDataItem)
+            fetchedImageUrls.push(imageUrl)
           }
-
-          updatedDataItems.push(updatedDataItem)
-        }
+        )
       )
 
       setUpdatedData(updatedDataItems)
+      setImageUrls(fetchedImageUrls)
 
       // Reset the update form
       setUpdateItemId(null)
@@ -159,6 +167,8 @@ const ThePage = () => {
       console.error('Error updating item:', error)
     }
   }
+
+  // ...
 
   const handleUpdateClick = (item: DataItem) => {
     setUpdateItemId(item.id)
