@@ -8,7 +8,7 @@ interface Props {
 
 const Mytest = ({ item, handleUpdateClick }: Props) => {
   return (
-    <div>
+    <div className="flex flex-col bg-slate-300">
       <img src={item.imageUrl} alt="" />
       <h2>{item.name}</h2>
       <h2>{item.github}</h2>
