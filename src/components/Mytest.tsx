@@ -3,7 +3,8 @@ import { DataItem } from '../interface/DataItemInterface'
 
 interface Props {
   item: DataItem
-  handleUpdateClick: (item: DataItem) => void // Add this prop
+  handleUpdateClick: (item: DataItem) => void
+  setSelectedFile: (file: File | null) => void // Add this prop
 }
 
 const Mytest = ({ item, handleUpdateClick }: Props) => {

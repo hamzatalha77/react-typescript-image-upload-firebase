@@ -206,7 +206,7 @@ const ThePage = () => {
         const storageRef = ref(storage, docSnapshot.data()?.imageUrl)
         await deleteObject(storageRef)
         const fileRef = ref(storage, selectedFile.name)
-        await storage.uploadBytes(fileRef, selectedFile)
+        await storage.uploadBytesResumable(fileRef, selectedFile)
         const imageUrl = await getDownloadURL(fileRef)
         await updateDoc(itemDoc, {
           imageUrl: fileRef.fullPath,
