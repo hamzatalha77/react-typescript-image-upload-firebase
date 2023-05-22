@@ -7,7 +7,7 @@ interface Props {
   setSelectedFile: (file: File | null) => void // Add this prop
 }
 
-const Mytest = ({ item, handleUpdateClick }: Props) => {
+const Mytest = ({ item, handleUpdateClick, setSelectedFile }: Props) => {
   return (
     <>
       {/* <div className="flex flex-col bg-slate-300">
