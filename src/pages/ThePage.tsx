@@ -24,8 +24,8 @@ const ThePage = () => {
   const [updateGithub, setUpdateGithub] = useState<string>('')
   const [updateLive, setUpdateLive] = useState<string>('')
   const [updateItemId, setUpdateItemId] = useState<string | null>(null)
-
   const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   // ...
 
@@ -229,7 +229,13 @@ const ThePage = () => {
             value={updateLive}
             onChange={(e) => setUpdateLive(e.target.value)}
           />
-          <input type="file" name="" id="" />
+          <input
+            type="file"
+            name=""
+            id=""
+            onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+          />
+
           <button type="button" onClick={handleUpdate}>
             Update
           </button>
