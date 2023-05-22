@@ -207,6 +207,7 @@ const ThePage = () => {
         await deleteObject(storageRef)
         const fileRef = ref(storage, selectedFile.name)
         await storage.uploadBytesResumable(fileRef, selectedFile)
+
         const imageUrl = await getDownloadURL(fileRef)
         await updateDoc(itemDoc, {
           imageUrl: fileRef.fullPath,
@@ -261,7 +262,6 @@ const ThePage = () => {
             key={item.id}
             item={item}
             handleUpdateClick={handleUpdateClick}
-            selectedFile={selectedFile}
           />
         ))}
       </div>
