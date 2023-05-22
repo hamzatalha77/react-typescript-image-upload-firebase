@@ -40,7 +40,16 @@ const Mytest = ({ item, handleUpdateClick }: Props) => {
                   <tr className="border-b dark:border-neutral-500">
                     <td className="whitespace-nowrap px-6 py-4 font-medium">
                       <img src={item.imageUrl} alt="" />
+                      <input
+                        type="file"
+                        name=""
+                        id=""
+                        onChange={(e) =>
+                          setSelectedFile(e.target.files?.[0] || null)
+                        }
+                      />
                     </td>
+
                     <td className="whitespace-nowrap px-6 py-4">
                       {' '}
                       <h2>{item.name}</h2>

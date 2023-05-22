@@ -199,7 +199,21 @@ const ThePage = () => {
         live: updateLive,
       })
 
-      console.log('Item has been updated successfully')
+      console.log('Item information has been updated successfully')
+
+      // Update the image if a new file is selected
+      if (selectedFile) {
+        const storageRef = ref(storage, docSnapshot.data()?.imageUrl)
+        await deleteObject(storageRef)
+        const fileRef = ref(storage, selectedFile.name)
+        await storage.uploadBytes(fileRef, selectedFile)
+        const imageUrl = await getDownloadURL(fileRef)
+        await updateDoc(itemDoc, {
+          imageUrl: fileRef.fullPath,
+        })
+
+        console.log('Image has been updated successfully')
+      }
 
       await fetchUpdatedData() // Fetch the updated data again
     } catch (error) {
@@ -247,6 +261,7 @@ const ThePage = () => {
             key={item.id}
             item={item}
             handleUpdateClick={handleUpdateClick}
+            selectedFile={selectedFile}
           />
         ))}
       </div>
