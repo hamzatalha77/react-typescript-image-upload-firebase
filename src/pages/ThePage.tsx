@@ -221,8 +221,13 @@ const ThePage = () => {
 
         console.log('Image has been updated successfully')
       }
+      // setSelectedFile(null)
+      await fetchUpdatedData()
+      setUpdateName('')
+      setUpdateGithub('')
+      setUpdateLive('')
       setSelectedFile(null)
-      await fetchUpdatedData() // Fetch the updated data again
+      // Fetch the updated data again
     } catch (error) {
       console.error('Error updating item:', error)
     }
@@ -231,7 +236,7 @@ const ThePage = () => {
   return (
     <>
       <div>
-        <form>
+        <form id="updateForm">
           <input
             type="text"
             name="name"
