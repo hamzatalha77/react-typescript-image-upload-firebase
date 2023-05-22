@@ -12,7 +12,13 @@ import {
   QueryDocumentSnapshot,
   updateDoc,
 } from 'firebase/firestore'
-import { ref, listAll, getDownloadURL, deleteObject } from 'firebase/storage'
+import {
+  ref,
+  listAll,
+  getDownloadURL,
+  deleteObject,
+  uploadBytes,
+} from 'firebase/storage'
 import { storage } from '../config/firebase'
 import { DataItem } from '../interface/DataItemInterface'
 import Mytest from '../components/Mytest'
@@ -206,7 +212,7 @@ const ThePage = () => {
         const storageRef = ref(storage, docSnapshot.data()?.imageUrl)
         await deleteObject(storageRef)
         const fileRef = ref(storage, selectedFile.name)
-        await storage.uploadBytesResumable(fileRef, selectedFile)
+        await uploadBytes(fileRef, selectedFile)
 
         const imageUrl = await getDownloadURL(fileRef)
         await updateDoc(itemDoc, {
@@ -262,6 +268,7 @@ const ThePage = () => {
             key={item.id}
             item={item}
             handleUpdateClick={handleUpdateClick}
+            setSelectedFile={setSelectedFile} // Add this prop
           />
         ))}
       </div>
