@@ -229,6 +229,7 @@ const ThePage = () => {
             value={updateLive}
             onChange={(e) => setUpdateLive(e.target.value)}
           />
+          <input type="file" name="" id="" />
           <button type="button" onClick={handleUpdate}>
             Update
           </button>
