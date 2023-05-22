@@ -226,6 +226,12 @@ const ThePage = () => {
       setUpdateName('')
       setUpdateGithub('')
       setUpdateLive('')
+
+      const formElement = document.getElementById(
+        'updateForm'
+      ) as HTMLFormElement
+      formElement.reset()
+
       setSelectedFile(null)
       // Fetch the updated data again
     } catch (error) {
