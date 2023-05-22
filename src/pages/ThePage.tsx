@@ -163,12 +163,6 @@ const ThePage = () => {
 
       setUpdatedData(updatedDataItems)
       setImageUrls(fetchedImageUrls)
-
-      // Reset the update form
-      setUpdateItemId(null)
-      setUpdateName('')
-      setUpdateGithub('')
-      setUpdateLive('')
     } catch (error) {
       console.error('Error updating item:', error)
     }
@@ -211,18 +205,21 @@ const ThePage = () => {
       if (selectedFile) {
         const storageRef = ref(storage, docSnapshot.data()?.imageUrl)
         await deleteObject(storageRef)
-        const fileRef = ref(storage, selectedFile.name)
+
+        const fileRef = ref(storage, `images/${selectedFile.name}`)
         await uploadBytes(fileRef, selectedFile)
 
         const imageUrl = await getDownloadURL(fileRef)
+
         await updateDoc(itemDoc, {
-          imageUrl: fileRef.fullPath,
+          imageUrl: imageUrl,
         })
 
         console.log('Image has been updated successfully')
       }
-      // setSelectedFile(null)
+
       await fetchUpdatedData()
+
       setUpdateName('')
       setUpdateGithub('')
       setUpdateLive('')
@@ -233,7 +230,6 @@ const ThePage = () => {
       formElement.reset()
 
       setSelectedFile(null)
-      // Fetch the updated data again
     } catch (error) {
       console.error('Error updating item:', error)
     }
