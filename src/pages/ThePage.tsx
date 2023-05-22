@@ -221,7 +221,7 @@ const ThePage = () => {
 
         console.log('Image has been updated successfully')
       }
-
+      setSelectedFile(null)
       await fetchUpdatedData() // Fetch the updated data again
     } catch (error) {
       console.error('Error updating item:', error)
