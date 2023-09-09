@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import TheForm from './pages/theform'
-import ThePage from './pages/thepage'
+import TheForm from './pages/TheForm'
+import ThePage from './pages/ThePage'
 import './index.css'
 const App = () => {
   return (
